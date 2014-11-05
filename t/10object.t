@@ -18,36 +18,36 @@ my %tests = (
         [ 'is',     'ean13',        '9780552557801'     ],
         [ 'is',     'title',        'Nation'            ],
         [ 'is',     'author',       'Terry Pratchett'   ],
-        [ 'is',     'publisher',    'Random House Children\'s Books'    ],
+        [ 'is',     'publisher',    'Corgi Childrens'   ],
         [ 'is',     'pubdate',      '24 September 2009' ],
         [ 'is',     'binding',      'Paperback'         ],
-        [ 'is',     'pages',        '432'               ],
-        [ 'is',     'width',        '111'               ],
-        [ 'is',     'height',       '178'               ],
-        [ 'is',     'weight',       undef               ],
+        [ 'is',     'pages',        432                 ],
+        [ 'is',     'width',        111                 ],
+        [ 'is',     'height',       178                 ],
+        [ 'is',     'weight',       216                 ],
         [ 'like',   'image_link',   qr|/assets/images/book/large/9780/5525/9780552557801.jpg|       ],
         [ 'like',   'thumb_link',   qr|/assets/images/book/medium/9780/5525/9780552557801.jpg|      ],
         [ 'like',   'description',  qr|When a giant wave destroys his entire Nation|                ],
-        [ 'like',   'book_link',    qr|http://www.bookdepository.co.uk/book/9780552557801/Nation|   ]
+        [ 'is',     'book_link',    'http://www.bookdepository.com/Nation-Terry-Pratchett/9780552557801'   ]
     ],
     '9780571239566' => [
-        [ 'is',     'isbn',         '9780571239566'     ],
-        [ 'is',     'isbn10',       '0571239560'        ],
-        [ 'is',     'isbn13',       '9780571239566'     ],
-        [ 'is',     'ean13',        '9780571239566'     ],
+        [ 'is',     'isbn',         '9780571239566'         ],
+        [ 'is',     'isbn10',       '0571239560'            ],
+        [ 'is',     'isbn13',       '9780571239566'         ],
+        [ 'is',     'ean13',        '9780571239566'         ],
         [ 'is',     'title',        'Touching from a Distance'  ],
-        [ 'is',     'author',       'Deborah Curtis'    ],
-        [ 'is',     'publisher',    'Faber and Faber'   ],
-        [ 'is',     'pubdate',      '04 October 2007'   ],
-        [ 'is',     'binding',      'Paperback'         ],
-        [ 'is',     'pages',        240                 ],
-        [ 'is',     'width',        129                 ],
-        [ 'is',     'height',       198                 ],
-        [ 'is',     'weight',       200                 ],
+        [ 'is',     'author',       'Deborah Curtis'        ],
+        [ 'like',   'publisher',    qr|Faber \S+ Faber|i    ],
+        [ 'is',     'pubdate',      '04 October 2007'       ],
+        [ 'is',     'binding',      'Paperback'             ],
+        [ 'is',     'pages',        240                     ],
+        [ 'is',     'width',        129                     ],
+        [ 'is',     'height',       198                     ],
+        [ 'is',     'weight',       200                     ],
         [ 'like',   'image_link',   qr|/assets/images/book/large/9780/5712/9780571239566.jpg|   ],
         [ 'like',   'thumb_link',   qr|/assets/images/book/medium/9780/5712/9780571239566.jpg|  ],
         [ 'like',   'description',  qr|Ian Curtis left behind a legacy rich in artistic genius| ],
-        [ 'like',   'book_link',    qr|http://www.bookdepository.co.uk/book/9780571239566/Touching-from-a-Distance| ]
+        [ 'is',     'book_link',    'http://www.bookdepository.com/Touching-from-Distance-Deborah-Curtis/9780571239566' ]
     ],
 );
 
@@ -78,6 +78,7 @@ SKIP: {
     }
 
     for my $isbn (keys %tests) {
+        diag("isbn: $isbn");
         eval { $record = $scraper->search($isbn) };
         my $error = $@ || $record->error || '';
 
@@ -87,9 +88,8 @@ SKIP: {
             skip "Book unavailable", scalar(@{ $tests{$isbn} }) + 2   
                 if($error =~ /Failed to find that book/ || !$record->found);
 
-            unless($record && $record->found) {
-                diag("error=$error, record error=".$record->error);
-            }
+            diag("error=$error")                    if($error);
+            diag("record error=".$record->error)    if($record && $record->error);
 
             is($record->found,1);
             is($record->found_in,$DRIVER);
@@ -115,7 +115,8 @@ SKIP: {
 sub pingtest {
     my $domain = shift or return 0;
     my $cmd =   $^O =~ /solaris/i                           ? "ping -s $domain 56 1" :
-                $^O =~ /dos|os2|mswin32|netware|cygwin/i    ? "ping -n 1 $domain "
+                $^O =~ /cygwin/i                            ? "ping $domain 56 1" : # ping [ -dfqrv ] host [ packetsize [ count [ preload ]]]
+                $^O =~ /dos|os2|mswin32|netware/i           ? "ping -n 1 $domain "
                                                             : "ping -c 1 $domain >/dev/null 2>&1";
 
     eval { system($cmd) }; 
